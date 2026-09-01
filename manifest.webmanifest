@@ -1,0 +1,16 @@
+{
+  "name": "Grupo Pana — PETAR Trabajo en Caliente",
+  "short_name": "PETAR Pana",
+  "description": "Registro digital del Permiso Escrito de Trabajo de Alto Riesgo para trabajos en caliente.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3F4F6",
+  "theme_color": "#1B222B",
+  "lang": "es-PE",
+  "icons": [
+    { "src": "assets/icons/icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
