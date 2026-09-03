@@ -600,3 +600,174 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media print {
   .cabecera, .barra-pie, .avisos, .pie { display: none; }
 }
+
+/* =====================================================================
+   Componentes del permiso (rev. 02): condiciones, niveles de exigencia,
+   personal, vigencia y cierre.
+   ===================================================================== */
+
+.etiqueta {
+  display: block;
+  font-size: .8rem; font-weight: 600; color: var(--acero);
+  margin: 0 0 6px;
+}
+
+.h-sub {
+  font-size: .88rem;
+  margin: 20px 0 8px;
+  color: var(--acero);
+}
+
+/* Marcas de exigencia y de origen del requisito */
+.marca {
+  display: inline-block;
+  font-size: .62rem; font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 4px;
+  vertical-align: 2px;
+  white-space: nowrap;
+}
+.marca--critico   { color: var(--llama); background: #FCEDE7; border: 1px solid rgba(199, 65, 26, .35); }
+.marca--requerido { color: var(--acero); background: #EDEFF2; border: 1px solid var(--linea); }
+.marca--norma     { color: var(--frio);  background: #E7EEF6; border: 1px solid #C6D8E9; }
+.marca--interno   { color: var(--ambar); background: var(--ambar-suave); border: 1px solid #EBD9AE; }
+.marca--sugerido  { color: var(--ok);    background: var(--ok-suave); border: 1px solid #C4E2D1; }
+
+.leyenda {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  font-size: .74rem; color: var(--gris);
+  margin-bottom: 14px;
+}
+.leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+.pt { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.pt--critico { background: var(--llama); }
+.pt--requerido { background: var(--acero); }
+.pt--info { background: var(--gris-claro); }
+
+/* Tarjeta de condición del área */
+.cond {
+  background: var(--blanco);
+  border: 1px solid var(--linea);
+  border-radius: var(--r-caja);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.cond__cab { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.cond__cab h3 { font-size: .9rem; margin: 0; letter-spacing: -.01em; }
+.cond__preg { font-size: .9rem; margin: 0 0 10px; line-height: 1.35; }
+.cond__ayuda { font-size: .76rem; color: var(--gris); margin: 8px 0 0; }
+.cond__hijo {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--linea);
+}
+.cond .alerta { margin: 10px 0 0; }
+
+/* Opciones apiladas (respuestas de varias palabras) */
+.opciones { display: grid; gap: 8px; }
+.opcion {
+  min-height: 48px;
+  text-align: left;
+  padding: 0 14px;
+  background: var(--blanco);
+  border: 1px solid var(--linea);
+  border-radius: var(--r-boton);
+  font-size: .9rem;
+  cursor: pointer;
+}
+.opcion.es-activo { background: var(--acero); border-color: var(--acero); color: #fff; font-weight: 600; }
+.opcion--ok.es-activo { background: var(--ok); border-color: var(--ok); }
+.opcion--mal.es-activo { background: var(--mal); border-color: var(--mal); }
+
+/* Personal: alta y listado */
+.agregar { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 10px; }
+.agregar input {
+  min-height: var(--tap);
+  padding: 12px 14px;
+  background: var(--blanco);
+  border: 1px solid var(--linea);
+  border-radius: var(--r-boton);
+}
+.agregar .btn { min-height: var(--tap); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--blanco);
+  border: 1px solid var(--linea);
+  border-left: 3px solid var(--acero);
+  border-radius: 4px;
+  padding: 8px 8px 8px 10px;
+  font-size: .86rem;
+}
+.chip button {
+  border: 0; background: #EDEFF2; color: var(--gris);
+  width: 24px; height: 24px; border-radius: 50%;
+  font-size: 1rem; line-height: 1; cursor: pointer;
+}
+
+.confirmacion {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--blanco);
+  border: 1px solid var(--linea);
+  border-radius: var(--r-caja);
+  padding: 14px;
+  margin-top: 16px;
+  font-size: .88rem;
+  cursor: pointer;
+}
+.confirmacion input { width: 22px; height: 22px; flex: none; margin: 0; accent-color: var(--llama); }
+
+.preg--sugerida { border-left: 3px solid var(--ok); }
+
+.caja-info {
+  background: var(--blanco);
+  border: 1px solid var(--linea);
+  border-left: 4px solid var(--acero);
+  border-radius: var(--r-caja);
+  padding: 12px 14px;
+  font-size: .84rem;
+  margin: 6px 0 4px;
+}
+.caja-info ul { margin: 6px 0 0; padding-left: 18px; color: var(--gris); }
+.caja-info li { margin: 2px 0; }
+.caja-info div { color: var(--gris); margin-top: 3px; }
+
+/* Banda de vigencia en el resumen y la ficha */
+.banda-vigencia {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  background: var(--blanco);
+  border: 1px solid var(--linea);
+  border-left: 4px solid var(--ok);
+  border-radius: var(--r-caja);
+  padding: 11px 14px;
+  margin-top: 10px;
+}
+.banda-vigencia span { font-size: .74rem; color: var(--gris); text-transform: none; }
+.banda-vigencia strong { font-size: .92rem; }
+.banda-vigencia small { color: var(--gris); font-size: .76rem; margin-left: auto; }
+.banda-vigencia--vencida { border-left-color: var(--mal); background: var(--mal-suave); }
+.banda-vigencia--vencida small { color: var(--mal); font-weight: 600; }
+
+/* Verificación de cierre */
+.cierre-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  width: 100%; text-align: left;
+  background: var(--blanco);
+  border: 1px solid var(--linea);
+  border-radius: var(--r-caja);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  font-size: .89rem;
+  cursor: pointer;
+}
+.cierre-item__caja {
+  width: 26px; height: 26px; flex: none;
+  border: 2px solid var(--linea);
+  border-radius: 6px;
+  display: grid; place-items: center;
+  font-weight: 700; color: transparent;
+}
+.cierre-item.es-activo { border-color: var(--ok); background: var(--ok-suave); }
+.cierre-item.es-activo .cierre-item__caja { background: var(--ok); border-color: var(--ok); color: #fff; }

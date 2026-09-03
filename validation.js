@@ -1,104 +1,120 @@
 /* =====================================================================
    VALIDACIONES — window.Validador
-   Devuelve siempre una lista de { campo, mensaje } en lenguaje claro.
-   Nunca mensajes técnicos.
+   Devuelve listas de { campo, mensaje } en lenguaje claro.
+   Distingue tres exigencias: crítico bloquea, requerido debe
+   completarse, informativo nunca detiene el permiso.
    ===================================================================== */
 (function () {
   'use strict';
 
   var C = window.PETAR_CONFIG;
 
-  function horaAMinutos(h) {
-    if (!h || h.indexOf(':') < 0) return null;
-    var p = h.split(':');
-    return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
-  }
-
   var Validador = {
 
     validarPaso: function (p, pasoId) {
       var e = [];
 
-      if (pasoId === 'generales') {
-        var g = p.generales;
-        if (!g.fecha) e.push({ campo: 'fecha', mensaje: 'Indica la fecha del permiso.' });
-        if (!g.horaInicio) e.push({ campo: 'horaInicio', mensaje: 'Indica la hora de inicio.' });
-        if (!g.horaTermino) e.push({ campo: 'horaTermino', mensaje: 'Indica la hora de término.' });
-        var i = horaAMinutos(g.horaInicio), f = horaAMinutos(g.horaTermino);
-        if (i !== null && f !== null && f <= i) {
-          e.push({ campo: 'horaTermino', mensaje: 'La hora de término debe ser posterior a la de inicio. Si el trabajo cruza la medianoche, registra dos PETAR.' });
-        }
-        if (!g.area) e.push({ campo: 'area', mensaje: 'Selecciona el área donde se ejecutará el trabajo.' });
-        if (!g.subarea) e.push({ campo: 'subarea', mensaje: 'Indica la subárea o ubicación exacta.' });
-        if (!g.responsableTrabajo) e.push({ campo: 'responsableTrabajo', mensaje: 'Debes completar el responsable del trabajo.' });
-        if (!g.nTrabajadores || Number(g.nTrabajadores) < 1) {
-          e.push({ campo: 'nTrabajadores', mensaje: 'Indica cuántos trabajadores participarán (mínimo 1).' });
-        }
+      if (pasoId === 'identificacion') {
+        var i = p.identificacion;
+        if (!i.fecha) e.push({ mensaje: 'Indica la fecha del permiso.' });
+        if (!i.area) e.push({ mensaje: 'Selecciona el área donde se ejecutará el trabajo.' });
+        if (!i.subarea) e.push({ mensaje: 'Selecciona la subárea.' });
+        if (!i.ubicacion || i.ubicacion.trim().length < 3) e.push({ mensaje: 'Describe la ubicación exacta del punto de trabajo.' });
+        if (!i.responsableTrabajo) e.push({ mensaje: 'Debes indicar el responsable del trabajo.' });
+        if (!i.solicitante) e.push({ mensaje: 'Indica quién solicita el permiso.' });
       }
 
       if (pasoId === 'trabajo') {
-        if (!p.trabajo.tipos || !p.trabajo.tipos.length) {
-          e.push({ campo: 'tipos', mensaje: 'Selecciona al menos un tipo de trabajo en caliente.' });
-        }
-        if ((p.trabajo.tipos || []).indexOf('Otros') >= 0 && !p.trabajo.otroDetalle) {
-          e.push({ campo: 'otroDetalle', mensaje: 'Especifica en qué consiste el trabajo marcado como "Otros".' });
-        }
-        if (!p.generales.descripcion || p.generales.descripcion.trim().length < 10) {
-          e.push({ campo: 'descripcion', mensaje: 'Describe el trabajo con al menos una frase (10 caracteres).' });
-        }
+        var t = p.trabajo;
+        if (!t.tipos.length) e.push({ mensaje: 'Selecciona al menos un tipo de trabajo en caliente.' });
+        if (t.tipos.indexOf('otro') >= 0 && !t.otroTipo) e.push({ mensaje: 'Especifica en qué consiste el trabajo marcado como "Otro".' });
+        if (!t.descripcion || t.descripcion.trim().length < 10) e.push({ mensaje: 'Describe el trabajo con al menos una frase.' });
+        if (!t.equipos.length) e.push({ mensaje: 'Indica el equipo o herramienta que se utilizará.' });
+        if (t.equipos.indexOf('Otro') >= 0 && !t.otroEquipo) e.push({ mensaje: 'Especifica el equipo marcado como "Otro".' });
+        if (!t.elemento) e.push({ mensaje: 'Indica sobre qué elemento se realizará el trabajo.' });
+        if (t.elemento === 'Otro' && !t.otroElemento) e.push({ mensaje: 'Especifica el elemento marcado como "Otro".' });
       }
 
-      if (pasoId === 'seguridad') {
-        C.checklist.forEach(function (sec) {
-          var faltan = sec.items.filter(function (it) { return !(p.checklist[sec.id] || {})[it.id]; });
-          if (faltan.length) {
-            e.push({
-              campo: sec.id,
-              mensaje: 'Faltan ' + faltan.length + ' respuesta(s) en "' + sec.titulo + '".'
-            });
-          }
+      if (pasoId === 'personal') {
+        var pe = p.personal;
+        if (!pe.trabajadores.length) e.push({ mensaje: 'Registra al menos un trabajador que ejecutará la tarea.' });
+        if (!pe.supervisor) e.push({ mensaje: 'Indica el supervisor a cargo.' });
+        if (!pe.vigia.requiere) e.push({ mensaje: 'Indica si la tarea requiere vigía o personal de apoyo.' });
+        if (pe.vigia.requiere === 'si' && !pe.vigia.nombre) e.push({ mensaje: 'Escribe el nombre del vigía o personal de apoyo.' });
+        if (!pe.confirmacion) e.push({ mensaje: 'Confirma que el personal conoce los riesgos y controles de la tarea.' });
+      }
+
+      if (pasoId === 'condiciones') {
+        window.Petar.condicionesVisibles(p).forEach(function (q) {
+          if (q.nivel === 'informativo') return;
+          var v = p.condiciones[q.id];
+          var vacio = (q.tipo === 'multiple') ? !(v && v.length) : !v;
+          if (vacio) e.push({ mensaje: 'Falta responder: ' + q.pregunta });
         });
       }
 
       if (pasoId === 'controles') {
-        var eppFaltan = C.epp.filter(function (it) { return !p.epp[it.id]; }).length;
-        if (eppFaltan) e.push({ campo: 'epp', mensaje: 'Faltan ' + eppFaltan + ' respuesta(s) en equipos de protección personal.' });
+        window.Petar.controlesAplicables(p).forEach(function (bloque) {
+          var faltan = bloque.items.filter(function (it) {
+            return it.nivel !== 'informativo' && !(p.controles[bloque.clave] || {})[it.id];
+          }).length;
+          if (faltan) e.push({ mensaje: 'Faltan ' + faltan + ' respuesta(s) en "' + bloque.titulo + '".' });
+        });
+      }
 
-        var eqFaltan = C.equipos.filter(function (it) { return !p.equipos[it.id]; }).length;
-        if (eqFaltan) e.push({ campo: 'equipos', mensaje: 'Faltan ' + eqFaltan + ' respuesta(s) en equipos y herramientas.' });
+      if (pasoId === 'epp') {
+        var sugerido = window.Petar.eppSugerido(p);
+        var faltanEpp = C.epp.filter(function (it) {
+          return it.nivel !== 'informativo' && sugerido.indexOf(it.id) >= 0 && !p.epp[it.id];
+        }).length;
+        if (faltanEpp) e.push({ mensaje: 'Faltan ' + faltanEpp + ' respuesta(s) en el EPP requerido para esta tarea.' });
+        if (p.epp.otro_epp === 'si' && !p.otroEppDetalle) e.push({ mensaje: 'Especifica el otro EPP que se utilizará.' });
+      }
 
-        if (!p.vigia.aplica) e.push({ campo: 'vigiaAplica', mensaje: 'Indica si el trabajo cuenta con vigía de fuego.' });
-        if (p.vigia.aplica === 'si') {
-          if (!p.vigia.nombre) e.push({ campo: 'vigiaNombre', mensaje: 'Escribe el nombre del vigía de fuego.' });
-          if (!p.vigia.horaInicio || !p.vigia.horaTermino) {
-            e.push({ campo: 'vigiaHoras', mensaje: 'Registra el horario de permanencia del vigía de fuego.' });
-          }
-          if (p.vigia.conoceFunciones !== 'si') {
-            e.push({ campo: 'vigiaFunciones', mensaje: 'Confirma que el vigía conoce sus funciones antes de continuar.' });
-          }
+      if (pasoId === 'exposicion') {
+        if (!p.exposicion.evaluacion) e.push({ mensaje: 'Indica si existe evaluación higiénica aplicable a la tarea.' });
+        if (p.exposicion.agentes.indexOf('Otros') >= 0 && !p.exposicion.otroAgente) {
+          e.push({ mensaje: 'Especifica el otro agente de exposición.' });
         }
+        if (!p.especiales.recipiente) e.push({ mensaje: 'Indica si se trabajará sobre un recipiente.' });
+        if (p.especiales.recipiente === 'si' && !p.especiales.recipienteInflamables) {
+          e.push({ mensaje: 'Indica si el recipiente contuvo sustancias inflamables o explosivas.' });
+        }
+        if (!p.especiales.confinado) e.push({ mensaje: 'Indica si el trabajo será en espacio confinado.' });
+
+        window.Petar.especialesActivos(p).forEach(function (bloque) {
+          var faltan = bloque.items.filter(function (it) {
+            return it.nivel !== 'informativo' && !(p.especiales[bloque.clave] || {})[it.id];
+          }).length;
+          if (faltan) e.push({ mensaje: 'Faltan ' + faltan + ' control(es) en "' + bloque.titulo + '".' });
+        });
       }
 
       if (pasoId === 'evidencias') {
         var r = window.Petar.resumenConformidad(p);
-        if (r.no > 0 && (!p.observaciones || p.observaciones.trim().length < 5)) {
-          e.push({ campo: 'observaciones', mensaje: 'Hay condiciones no conformes: describe en observaciones la medida adoptada.' });
+        if (r.requeridosNo > 0 && (!p.observaciones || p.observaciones.trim().length < 5)) {
+          e.push({ mensaje: 'Hay controles requeridos sin cumplir: describe en observaciones la medida adoptada.' });
         }
       }
 
-      if (pasoId === 'firmas') {
-        if (!p.firmas.responsable.nombre) e.push({ campo: 'respNombre', mensaje: 'Falta el nombre del responsable del trabajo.' });
-        if (!p.firmas.responsable.cargo) e.push({ campo: 'respCargo', mensaje: 'Falta el cargo del responsable del trabajo.' });
-        if (!p.firmas.responsable.firma) e.push({ campo: 'respFirma', mensaje: 'El responsable del trabajo debe firmar en pantalla.' });
-        if (!p.firmas.autorizante.nombre) e.push({ campo: 'autNombre', mensaje: 'Falta el nombre de quien autoriza el permiso.' });
-        if (!p.firmas.autorizante.cargo) e.push({ campo: 'autCargo', mensaje: 'Falta el cargo de quien autoriza el permiso.' });
-        if (!p.firmas.autorizante.firma) e.push({ campo: 'autFirma', mensaje: 'El autorizante SST debe firmar en pantalla.' });
+      if (pasoId === 'vigencia') {
+        var v = p.vigencia;
+        if (!v.inicioFecha || !v.inicioHora) e.push({ mensaje: 'Indica la fecha y hora de inicio de la vigencia.' });
+        if (!v.finFecha || !v.finHora) e.push({ mensaje: 'Indica la fecha y hora de término de la vigencia.' });
+        var ini = window.Petar.inicioVigencia(p), fin = window.Petar.finVigencia(p);
+        if (ini && fin && fin <= ini) e.push({ mensaje: 'El término de la vigencia debe ser posterior al inicio.' });
+
+        C.firmas.filter(function (f) { return f.activa && f.requerida; }).forEach(function (f) {
+          var d = p.autorizacion[f.clave] || {};
+          if (!d.nombre) e.push({ mensaje: 'Falta el nombre en "' + f.titulo + '".' });
+          if (!d.cargo) e.push({ mensaje: 'Falta el cargo en "' + f.titulo + '".' });
+          if (!d.firma) e.push({ mensaje: 'Falta la firma de "' + f.titulo + '".' });
+        });
       }
 
       return e;
     },
 
-    /* Validación completa: se usa antes de guardar y de autorizar */
     validarTodo: function (p) {
       var todos = [];
       C.pasos.forEach(function (paso) {
@@ -111,18 +127,31 @@
       return todos;
     },
 
-    /* Bloqueos duros para autorizar (condiciones críticas en NO) */
+    /* Bloqueos duros: controles críticos incumplidos */
     bloqueosParaAutorizar: function (p) {
       var r = window.Petar.resumenConformidad(p);
       var b = [];
       if (r.criticasNo > 0) {
         b.push({
-          campo: 'criticas',
-          mensaje: 'Hay ' + r.criticasNo + ' condición(es) crítica(s) no conforme(s). Corrige en campo y actualiza la respuesta antes de autorizar.',
+          mensaje: 'Hay ' + r.criticasNo + ' control(es) crítico(s) sin cumplir. El permiso no puede autorizarse hasta corregirlos en campo y actualizar la respuesta.',
           detalle: r.detalleCriticas
         });
       }
+      if (window.Petar.estaVencido(p)) {
+        b.push({ mensaje: 'La vigencia indicada ya venció. Ajusta el horario antes de autorizar.', detalle: [] });
+      }
       return b;
+    },
+
+    /* Cierre del permiso */
+    validarCierre: function (p) {
+      var e = [];
+      window.Petar.cierrePendiente(p).forEach(function (it) {
+        e.push({ mensaje: 'Falta confirmar: ' + it.label });
+      });
+      if (!p.cierre.responsable) e.push({ mensaje: 'Indica quién entrega el área.' });
+      if (!p.cierre.firma) e.push({ mensaje: 'Falta la firma de cierre.' });
+      return e;
     }
   };
 
